@@ -33,24 +33,48 @@ int main(void) {
 	cudaFree(dev_b);
 	cudaFree(dev_c);
 
-	size = sizeof(int) * 2048;
+	size = sizeof(int) * 4096;
 
-	int *x = malloc(size);
-	int *y = malloc(size);
-
-	memset(x, 1, 2048);
-	memset(y, 2, 2048);
+	int *x = (int *)malloc(size);
+	int *y = (int *)malloc(size);
+	int *z = (int *)malloc(size);
+	
+	memset(x, 1, size);
+	memset(y, 2, size);
 
 	cudaMalloc((void **)&dev_a, size);
         cudaMalloc((void **)&dev_b, size);
         cudaMalloc((void **)&dev_c, size);
 
+	x[0] = 5;
+	y[0] = 5;
+
+	x[1024] = 2;
+	y[1024] = 2;
+
+	x[2047] = 1;
+	y[2047] = 1;
 	cudaMemcpy(dev_a, x, size, cudaMemcpyHostToDevice);
         cudaMemcpy(dev_b, y, size, cudaMemcpyHostToDevice);
 
 	int threadsPerBlock = 1024;
 	int blocksPerGrid =
-            (2048 + threadsPerBlock - 1) / threadsPerBlock;
+            (4096 + threadsPerBlock - 1) / threadsPerBlock;
 
+	array_add<<< blocksPerGrid, threadsPerBlock >>>(dev_a, dev_b, dev_c, 4096);
+
+	cudaMemcpy(z, dev_c, size, cudaMemcpyDeviceToHost);
+	for (int j = 0; j < 4096; j++) {
+		printf("%d ", z[j]);
+	}
+	printf("\n");
+
+	free(x);
+	free(y);
+	free(z);
+
+        cudaFree(dev_a);
+        cudaFree(dev_b);
+        cudaFree(dev_c);
 
 }
